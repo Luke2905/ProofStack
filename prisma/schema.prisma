@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Portfolio {
+  id                      String   @id @default(uuid())
+  slug                    String   @unique
+  userId                  String?  @map("user_id")
+  isOwnerProfile          Boolean  @default(false) @map("is_owner_profile")
+  isPublished             Boolean  @default(true) @map("is_published")
+  showInHub               Boolean  @default(true) @map("show_in_hub")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  // Basic Identity
+  name                    String
+  avatarUrl               String   @db.VarChar(1000) @map("avatar_url")
+  headline                String   @db.VarChar(500)
+  roleCategory            String   @map("role_category")
+  seniority               String
+  yearsOfExperience       Int      @default(1) @map("years_of_experience")
+  shortBio                String   @db.Text @map("short_bio")
+  aboutMarkdown           String   @db.MediumText @map("about_markdown")
+  location                String
+  languages               Json
+
+  // Recruiter & Company Critical Metadata
+  availabilityStatus      String   @map("availability_status")
+  preferredModalities     Json     @map("preferred_modalities")
+  contractTypes           Json     @map("contract_types")
+  compensationExpectation String?  @map("compensation_expectation")
+  noticePeriod            String?  @map("notice_period")
+
+  // Contact & Validation Links
+  email                   String
+  whatsapp                String?
+  linkedinUrl             String?  @db.VarChar(1000) @map("linkedin_url")
+  githubUsername          String?  @map("github_username")
+  githubUrl               String?  @db.VarChar(1000) @map("github_url")
+  websiteUrl              String?  @db.VarChar(1000) @map("website_url")
+  calendlyUrl             String?  @db.VarChar(1000) @map("calendly_url")
+  resumeUrl               String?  @db.VarChar(1000) @map("resume_url")
+
+  // JSON Columns for Theme & GitHub Telemetry
+  githubStats             Json     @map("github_stats")
+  theme                   Json
+
+  // Hub Engagement Metrics
+  viewsCount              Int      @default(0) @map("views_count")
+  likesCount              Int      @default(0) @map("likes_count")
+  verifiedGithub          Boolean  @default(false) @map("verified_github")
+
+  // Relations
+  projects                Project[]
+  skills                  Skill[]
+  experiences             Experience[]
+
+  @@map("portfolios")
+}
+
+model Project {
+  id               String    @id @default(uuid())
+  portfolioId      String    @map("portfolio_id")
+  portfolio        Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  title            String
+  subtitle         String    @db.VarChar(500)
+  problemStatement String    @db.Text @map("problem_statement")
+  solutionDetails  String    @db.Text @map("solution_details")
+  impactMetrics    String    @db.Text @map("impact_metrics")
+  coverImageUrl    String    @db.VarChar(1000) @map("cover_image_url")
+  demoUrl          String?   @db.VarChar(1000) @map("demo_url")
+  repoUrl          String?   @db.VarChar(1000) @map("repo_url")
+  techStack        Json      @map("tech_stack")
+  isFromGithub     Boolean   @default(false) @map("is_from_github")
+  githubRepoId     BigInt?   @map("github_repo_id")
+  starsCount       Int       @default(0) @map("stars_count")
+  forksCount       Int       @default(0) @map("forks_count")
+  language         String?
+  role             String?
+  clientOrCompany  String?   @map("client_or_company")
+  year             String?
+  isFeatured       Boolean   @default(false) @map("is_featured")
+  isVisible        Boolean   @default(true) @map("is_visible")
+  displayOrder     Int       @default(0) @map("display_order")
+
+  @@map("projects")
+}
+
+model Skill {
+  id          String    @id @default(uuid())
+  portfolioId String    @map("portfolio_id")
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  name        String
+  category    String
+  level       String
+  years       Int       @default(1)
+
+  @@map("skills")
+}
+
+model Experience {
+  id           String    @id @default(uuid())
+  portfolioId  String    @map("portfolio_id")
+  portfolio    Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  company      String
+  role         String
+  location     String
+  startDate    String    @map("start_date")
+  endDate      String    @map("end_date")
+  isCurrent    Boolean   @default(false) @map("is_current")
+  description  String    @db.Text
+  achievements Json
+  technologies Json
+
+  @@map("experiences")
+}
+
+model User {
+  id           String    @id
+  name         String
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  portfolioId  String?   @unique @map("portfolio_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@map("users")
+}

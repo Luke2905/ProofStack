@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #06070b;
+    color: #f4f4f5;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+}
+
+/* ==========================================================================
+   SUPERFÍCIES PREMIUM — fundo escuro profundo, vidro fosco, bordas finas
+   e brilhos sutis. Nomes ag-* mantidos por compatibilidade.
+   ========================================================================== */
+
+.ag-spatial-bg {
+  background-color: #05060a;
+  background-image:
+    radial-gradient(60% 40% at 15% 0%, rgba(59, 130, 246, 0.16) 0%, transparent 70%),
+    radial-gradient(50% 35% at 90% 10%, rgba(34, 211, 238, 0.09) 0%, transparent 70%);
+  background-repeat: no-repeat;
+}
+
+.ag-glass {
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 20px 40px -24px rgba(0, 0, 0, 0.7);
+}
+
+.ag-glass-elevated {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    0 28px 56px -28px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(59, 130, 246, 0.04);
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ag-glass-elevated:hover {
+  border-color: rgba(96, 165, 250, 0.35);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+    0 28px 56px -28px rgba(0, 0, 0, 0.75),
+    0 0 32px -8px rgba(59, 130, 246, 0.25);
+}
+
+.ag-perspective,
+.ag-preserve-3d {
+  perspective: none;
+  transform-style: flat;
+}
+
+/* Texto com gradiente de destaque (usa --fx-from / --fx-to) */
+.fx-gradient-text {
+  background-image: linear-gradient(120deg, var(--fx-from, #60a5fa), var(--fx-to, #22d3ee));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* Custom sleek scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #06070b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}
