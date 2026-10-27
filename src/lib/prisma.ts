@@ -1,7 +1,5 @@
 import mysql, { Pool } from 'mysql2/promise';
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
 import {
   AvailabilityStatus,
   ContractType,
@@ -13,39 +11,17 @@ import {
   WorkModality,
 } from '@/types/portfolio';
 
-const CONFIG_FILE = path.join(process.cwd(), '.db-config.json');
-const LEGACY_CONFIG_FILE = path.join(process.cwd(), '.pg-config.json');
-
 export function getDatabaseUrl(): string {
-  try {
-    if (fs.existsSync(CONFIG_FILE)) {
-      const raw = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
-      if (raw.databaseUrl) return raw.databaseUrl;
-    }
-    if (fs.existsSync(LEGACY_CONFIG_FILE)) {
-      const raw = JSON.parse(fs.readFileSync(LEGACY_CONFIG_FILE, 'utf-8'));
-      if (raw.databaseUrl && !raw.databaseUrl.startsWith('postgresql:')) {
-        return raw.databaseUrl;
-      }
-    }
-  } catch {
-    // ignore
+  const envUrl = process.env.DATABASE_URL?.trim();
+  if (!envUrl) {
+    throw new Error(
+      'A variável de ambiente DATABASE_URL não está definida no arquivo .env ou nas configurações do servidor.'
+    );
   }
-  return (
-    process.env.DATABASE_URL ||
-    'mysql://root@localhost:3306/portifoliohub'
-  );
+  return envUrl;
 }
 
-export function saveDatabaseUrl(databaseUrl: string) {
-  const payload = JSON.stringify({ databaseUrl: databaseUrl.trim() }, null, 2);
-  try {
-    fs.writeFileSync(CONFIG_FILE, payload, 'utf-8');
-    fs.writeFileSync(LEGACY_CONFIG_FILE, payload, 'utf-8');
-  } catch {
-    // Ignore on read-only serverless filesystems (e.g. Vercel)
-  }
-
+export function saveDatabaseUrl(_databaseUrl: string) {
   if (globalForMysql.pool) {
     globalForMysql.pool.end().catch(() => {});
     globalForMysql.pool = undefined;
@@ -54,36 +30,36 @@ export function saveDatabaseUrl(databaseUrl: string) {
 }
 
 function parseMysqlUrl(urlStr: string) {
-  try {
-    const url = new URL(urlStr);
-    const sslParam =
-      url.searchParams.get('ssl') ||
-      url.searchParams.get('sslaccept') ||
-      url.searchParams.get('ssl-mode');
-    const useSsl =
-      Boolean(sslParam) &&
-      sslParam !== 'false' &&
-      sslParam !== '0' &&
-      sslParam?.toLowerCase() !== 'disabled';
+  const url = new URL(urlStr);
+  const host = url.hostname;
+  const port = url.port ? parseInt(url.port, 10) : 3306;
+  const isLocal = host === 'localhost' || host === '127.0.0.1';
 
-    return {
-      host: url.hostname || 'localhost',
-      port: url.port ? parseInt(url.port, 10) : 3306,
-      user: decodeURIComponent(url.username || 'root'),
-      password: decodeURIComponent(url.password || ''),
-      database: url.pathname.replace(/^\//, '') || 'portifoliohub',
-      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-    };
-  } catch {
-    return {
-      host: 'localhost',
-      port: 3306,
-      user: 'root',
-      password: '',
-      database: 'portifoliohub',
-      ssl: undefined,
-    };
-  }
+  const sslParam =
+    url.searchParams.get('ssl') ||
+    url.searchParams.get('sslaccept') ||
+    url.searchParams.get('ssl-mode');
+
+  const explicitDisableSsl =
+    sslParam === 'false' ||
+    sslParam === '0' ||
+    sslParam?.toLowerCase() === 'disabled';
+
+  const useSsl = !explicitDisableSsl && (!isLocal || Boolean(sslParam));
+
+  return {
+    host,
+    port,
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+    database: url.pathname.replace(/^\//, ''),
+    ssl: useSsl
+      ? {
+          minVersion: 'TLSv1.2' as const,
+          rejectUnauthorized: true,
+        }
+      : undefined,
+  };
 }
 
 const globalForMysql = globalThis as unknown as {
